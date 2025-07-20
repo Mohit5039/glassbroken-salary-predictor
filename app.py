@@ -44,7 +44,7 @@ education_mappings = {
     'high school': 'High School',
 }
 
-job_titles_df = pd.read_csv("Data/unique_job_titles.csv")
+job_titles_df = pd.read_csv("data/unique_job_titles.csv")
 all_job_titles = job_titles_df['Job Title'].dropna().unique().tolist()
 
 # ----------------- Functions --------------------
