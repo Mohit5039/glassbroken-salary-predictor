@@ -1,5 +1,8 @@
 # GlassBroken: AI-Powered Salary Prediction Chatbot
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black.svg)](https://glassbroken.streamlit.app/)
+
+
 ![GlassBroken Banner](assets/dashboard.png)
 
 ## End-to-End ML Project | Streamlit UI + XGBoost + NLP | Internship with EDUNET Foundation (IBM SkillBuild)
