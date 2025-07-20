@@ -1,0 +1,17 @@
+streamlit==1.35.0
+pandas
+numpy
+scikit-learn
+xgboost
+joblib
+plotly
+rapidfuzz
+streamlit-chat
+streamlit-lottie
+emoji
+matplotlib
+seaborn
+scipy
+requests
+Pillow
+python-dotenv

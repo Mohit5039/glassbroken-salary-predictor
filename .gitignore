@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.venv/
+venv/
+env/
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files
+*.pkl
+*.joblib
+
+# Streamlit logs and cache
+.streamlit/
+logs/
+cache/
+.history/
+
+# VSCode
+.vscode/
+
+# pyenv / pipenv / poetry
+.python-version
+Pipfile.lock
+poetry.lock
