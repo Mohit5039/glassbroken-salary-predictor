@@ -8,10 +8,12 @@ import numpy as np
 import time
 from xgboost import XGBRegressor
 from xgboost.core import XGBoostError
+from llm import ask_career_bot
+
 
 # ----------------- Config --------------------
 st.set_page_config(
-    page_title="Glassbroken: AI Salary Buddy",
+    page_title="Glassbroken: AI Career Buddy",
     layout="centered"
 )
 
@@ -120,28 +122,66 @@ def predict_and_adjust(model, scaler, expected_columns, input_df, city):
 
 # ----------------- Pages --------------------
 def render_about_page():
-    st.title("📖 About Glassbroken: AI Salary Buddy")
+    st.title("📖 About GlassBroken: AI Career Buddy")
     st.divider()
+    
     st.header("📌 Project Overview")
-    st.write("**Glassbroken: AI Salary Buddy** helps users estimate annual compensation (CTC) "
-             "based on job-related inputs like title, experience, education, and city "
-             "through a friendly chatbot interface.")
+    st.write(
+        "**GlassBroken: AI Career Buddy** is an AI-powered platform designed to help users with both "
+        "**salary predictions** and **career guidance** through interactive chatbot interfaces."
+    )
+    
     st.header("🧠 How It Works")
-    st.write("The app uses a trained ML model (XGBoost Regressor) to predict monthly base salary, "
-             "converts it to annual CTC, and adjusts for city cost-of-living multipliers.")
+    st.write(
+        "The app originally used a trained ML model (XGBoost Regressor) to predict monthly base salary, "
+        "convert it to annual CTC, and adjust for city cost-of-living multipliers. "
+        "Now, it also includes a conversational career guidance bot (CareerBuddy) powered by LLaMA "
+        "for multi-turn, personalized career advice."
+    )
+    
+    st.header("💬 Dual Bot Features")
+    st.write(
+        "- **PayCheck 💰**: Estimates annual salary, salary ranges, and city-adjusted comparisons with interactive plots.\n"
+        "- **CareerBuddy 🤝**: Engages in multi-turn conversations, asks clarifying questions, and provides structured career advice."
+    )
+    
     st.header("📊 Data & Model")
-    st.write("Model: XGBoost Regressor, trained on public Indian salary data. "
-             "Preprocessing: one-hot encoding, scaling, fuzzy job title matching.")
+    st.write(
+        "Salary prediction uses XGBoost Regressor trained on public Indian salary data. "
+        "Preprocessing includes one-hot encoding, scaling, and fuzzy job title matching."
+    )
+    
     st.header("🏙️ City Adjustments")
-    st.write("Salaries are adjusted with static multipliers for major Indian cities. "
-             "These are approximations and not learned directly by the model.")
+    st.write(
+        "Salaries are adjusted using static multipliers for major Indian cities. "
+        "These are approximations and not learned directly by the model."
+    )
+    
     st.header("⚠️ Limitations")
-    st.write("* No company-specific data\n* City adjustments are static\n* Predictions may be less accurate for rare job titles\n* Gender input not used in model (only for analytics)")
+    st.write(
+        "* CareerBuddy responses are in first version; tone and structure will improve over time.\n"
+        "* No company-specific salary data.\n"
+        "* City adjustments are static.\n"
+        "* Predictions may be less accurate for rare job titles.\n"
+        "* Gender input is not used in model (only for analytics)."
+    )
+    
+    st.header("📈 Future Plans")
+    st.write(
+        "- Polish CareerBuddy responses for friendly, concise guidance.\n"
+        "- Integrate live salary data via RapidAPI for comparison.\n"
+        "- Continue daily feature updates and improvements."
+    )
+    
     st.header("👥 Credits")
-    st.write("Designed and built by **Mohit Singh (Mohit Shekhawat)** as an internship project.")
+    st.write(
+        "Designed and built by **Mohit Singh (Mohit Shekhawat)** as an internship project, "
+    "evolving into a modular AI career assistant platform."
+    )
+
 
 def render_chatbot():
-    st.title("💬 Glassbroken Salary Chatbot")
+    st.title("PayCheck 💰: Know Your Numbers")
     for msg in st.session_state.messages:
         with st.chat_message(msg['role']):
             st.markdown(msg['content'])
@@ -309,6 +349,48 @@ def render_report(model, scaler, expected_columns, all_job_titles):
     for col in ['Estimated Salary (Annual)', 'Lower Bound', 'Upper Bound']:
         display_df[col] = display_df[col].apply(lambda x: f"₹ {x:,.0f}")
     st.dataframe(display_df, use_container_width=True, hide_index=True)
+    
+
+#----------- Guidance Bot -----------#
+def render_career_board():
+    """
+    Separate Career Guidance Bot (modular).
+    Uses ask_career_bot(user_text) from llm.py to answer career queries.
+    Conversation history is stored in st.session_state['career_messages'].
+    """
+    st.title("💡CareerBuddy : Career Guidance Bot")
+
+    # init
+    if "career_messages" not in st.session_state:
+        st.session_state.career_messages = []
+
+    # Display conversation history
+    for msg in st.session_state.career_messages:
+        # msg['role'] must be 'user' or 'assistant' (to match your existing pattern)
+        with st.chat_message(msg['role']):
+            st.markdown(msg['content'])
+
+    # Input for new career query (single-line input, multi-turn preserved)
+    career_query = st.chat_input(placeholder="Ask about skills, roadmap, interviews, etc...", key="career_query_input")
+
+    if career_query:
+        # Append user message and call the LLM
+        st.session_state.career_messages.append({'role': 'user', 'content': career_query})
+        with st.spinner("Thinking... 🤔"):
+            try:
+                bot_response = ask_career_bot(career_query)
+            except Exception as e:
+                bot_response = f"Sorry — I couldn't fetch a response right now. ({e})"
+
+        st.session_state.career_messages.append({'role': 'assistant', 'content': bot_response})
+        # rerun to show the updated chat (use st.rerun as you used elsewhere)
+        st.rerun()
+
+    # Utility: clear career chat
+    if st.button("Clear Career Chat"):
+        st.session_state.career_messages = []
+        st.rerun()
+
 
 # ----------------- Main --------------------
 def main():
@@ -317,28 +399,68 @@ def main():
 
     # ---------------- Initialize Session State ----------------
     if 'messages' not in st.session_state:
+     st.session_state.messages = []
+     st.session_state.inputs = {}
+     st.session_state.completed = False
+     st.session_state.show_about = False
+     st.session_state.show_career = False
+
+    # ---------------- Sidebar ----------------
+    with st.sidebar:
+     st.markdown("# GlassBroken: AI Career Buddy")
+     st.divider()
+    
+        
+     if st.button("About"):
+        st.session_state.show_about = True
+        st.session_state.show_career = False
+        st.rerun()
+
+     if st.button("PayCheck 💰"):
+        # go to the original salary/chat board
+        st.session_state.show_about = False
+        st.session_state.show_career = False
+        st.rerun()
+
+     if st.button("CareerBuddy 🤝"):
+        st.session_state.show_career = True
+        st.session_state.show_about = False
+        st.rerun()
+
+     st.divider()
+
+      # Separate restart buttons
+     if st.button("Restart PayCheck"):
         st.session_state.messages = []
         st.session_state.inputs = {}
         st.session_state.completed = False
         st.session_state.show_about = False
+        st.session_state.show_career = False
+        st.rerun()
 
-    # ---------------- Sidebar ----------------
-    with st.sidebar:
-        if st.button("About"):
-            st.session_state.show_about = True
-            st.rerun()
-        if st.button("Restart Chatbot"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.session_state.messages = []
-            st.session_state.inputs = {}
-            st.session_state.completed = False
-            st.session_state.show_about = False
-            st.rerun()
+     if st.button("Restart CareerBuddy"):
+        st.session_state.career_messages = []
+        st.session_state.show_career = True
+        st.rerun()
+
+     st.divider()
+
+     if st.button("Restart All (Full Reset)"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.session_state.messages = []
+        st.session_state.inputs = {}
+        st.session_state.completed = False
+        st.session_state.show_about = False
+        st.session_state.show_career = False
+        st.rerun()
+
 
     # ---------------- Page Rendering ----------------
     if st.session_state.show_about:
         render_about_page()
+    elif st.session_state.show_career:
+        render_career_board()
     elif not st.session_state.completed:
         render_chatbot()
     else:
