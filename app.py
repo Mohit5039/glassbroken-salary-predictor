@@ -171,8 +171,8 @@ def render_about_page():
     st.header("📈 Future Plans")
     st.write(
         "- Refine CareerBuddy for friendlier, more concise guidance.\n"
-        "- Integrate live salary data via RapidAPI.\n"
         "- Continue daily feature updates and improvements."
+        " - Will soon add a feedback feature "
     )
     
     st.header("👥 Credits")
