@@ -1,8 +1,9 @@
 from huggingface_hub import InferenceClient
 import os
 
-# Initialize Hugging Face Inference Client
-client = InferenceClient(os.environ["HF_TOKEN"])
+# ---------------- Initialize Hugging Face Inference Client ----------------
+client = InferenceClient(token=os.environ["HF_TOKEN"])
+MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"  # exact model repo ID
 
 # ---------------- System prompt, salary message, keywords ----------------
 system_prompt = """
@@ -42,6 +43,7 @@ Guidelines:
    - Never bombard the user with questions or technical jargon.
    - Use natural, conversational flow throughout the interaction.
    - Responses should feel like a **two-friends conversation** — engaging, relatable, and human-like.
+6. **Avoid providing salary numbers or range in conversation for that we have paycheck bot.**
 """
 
 SALARY_MESSAGE = "Hey! For accurate salary predictions, please use our **PayCheck 💰 feature from the sidebar**, which provides city-adjusted, up-to-date estimates based on your role and experience."
@@ -61,7 +63,7 @@ def ask_career_bot(user_input: str) -> str:
     Takes user input, checks for salary queries, and returns CareerBuddy response.
     If not salary-related, calls LLaMA API and preserves multi-turn context.
     """
-    # Check for salary-related queries first
+    # Salary keyword check
     if any(keyword.lower() in user_input.lower() for keyword in SALARY_KEYWORDS):
         conversation_history.append({"role": "user", "content": user_input})
         conversation_history.append({"role": "assistant", "content": SALARY_MESSAGE})
@@ -70,21 +72,21 @@ def ask_career_bot(user_input: str) -> str:
     # Append user input
     conversation_history.append({"role": "user", "content": user_input})
 
-    # Prepare messages with system prompt + conversation history
+    # Prepare messages for multi-turn
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(conversation_history)
 
-    # Call the Hugging Face LLaMA model
+    # Call Hugging Face model
     try:
         completion = client.chat.completions.create(
-            model="meta-llama/Llama-3.1-8B-Instruct:fireworks-ai",
-            messages=messages,
+            model=MODEL_ID,
+            messages=messages
         )
         bot_response = completion.choices[0].message.content
     except Exception as e:
         bot_response = f"⚠️ Sorry, something went wrong with CareerBuddy: {e}"
 
-    # Append bot response to history
+    # Append response to history
     conversation_history.append({"role": "assistant", "content": bot_response})
     return bot_response
 
