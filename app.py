@@ -14,7 +14,7 @@ from llm import ask_career_bot
 
 # ----------------- Config --------------------
 st.set_page_config(
-    page_title="Glassbroken: AI Career Buddy",
+    page_title="Mārga: AI-Powered Career Guide",
     layout="centered"
 )
 
