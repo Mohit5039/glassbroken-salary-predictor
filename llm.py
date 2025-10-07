@@ -1,13 +1,10 @@
+from huggingface_hub import InferenceClient
 import os
-from openai import OpenAI
 
-# Initialize Hugging Face LLaMA inference client
-client = OpenAI(
-    base_url="https://router.huggingface.co/v1",
-    api_key=os.environ["HF_TOKEN"],
-)
+# Initialize Hugging Face Inference Client
+client = InferenceClient(os.environ["HF_TOKEN"])
 
-# System prompt for conversational behavior
+# ---------------- System prompt, salary message, keywords ----------------
 system_prompt = """
 You are CareerBuddy, a friendly and conversational career guidance assistant part of Mārga: AI-Powered Career Guide.
 
@@ -39,7 +36,6 @@ Guidelines:
    - Encourage the user to **engage with the advice** step by step, not all at once.
    - Avoid **overly general advice**: e.g., "You should start learning Python."
 
-
 5. **Conciseness & Tone**
    - Keep responses concise; avoid long paragraphs.
    - Be friendly, encouraging, and approachable.
@@ -48,52 +44,49 @@ Guidelines:
    - Responses should feel like a **two-friends conversation** — engaging, relatable, and human-like.
 """
 
-
-# Conversation history
-conversation_history = []
-
-# Hardcoded salary redirect message
 SALARY_MESSAGE = "Hey! For accurate salary predictions, please use our **PayCheck 💰 feature from the sidebar**, which provides city-adjusted, up-to-date estimates based on your role and experience."
 
-# Expanded salary-related keywords
 SALARY_KEYWORDS = [
     "salary", "ctc", "pay", "income", "compensation", "package", "earn", "wage",
     "remuneration", "stipend", "take-home", "payment", "financial", "paycheck",
     "pay check", "earning", "money", "job pay", "salary range", "expected salary"
 ]
 
-def ask_career_bot(user_input):
+# ---------------- Conversation history ----------------
+conversation_history = []
+
+# ---------------- CareerBuddy function ----------------
+def ask_career_bot(user_input: str) -> str:
     """
     Takes user input, checks for salary queries, and returns CareerBuddy response.
     If not salary-related, calls LLaMA API and preserves multi-turn context.
     """
-    # Detect salary-related questions
+    # Check for salary-related queries first
     if any(keyword.lower() in user_input.lower() for keyword in SALARY_KEYWORDS):
-        # Append user input to history
         conversation_history.append({"role": "user", "content": user_input})
-        # Append hardcoded salary message to history
         conversation_history.append({"role": "assistant", "content": SALARY_MESSAGE})
         return SALARY_MESSAGE
 
-    # Append user input to history
+    # Append user input
     conversation_history.append({"role": "user", "content": user_input})
 
-    # Prepare full message sequence for multi-turn
+    # Prepare messages with system prompt + conversation history
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(conversation_history)
 
-    # Call the LLaMA inference API
-    completion = client.chat.completions.create(
-        model="meta-llama/Llama-3.1-8B-Instruct:fireworks-ai",
-        messages=messages,
-    )
+    # Call the Hugging Face LLaMA model
+    try:
+        completion = client.chat.completions.create(
+            model="meta-llama/Llama-3.1-8B-Instruct:fireworks-ai",
+            messages=messages,
+        )
+        bot_response = completion.choices[0].message.content
+    except Exception as e:
+        bot_response = f"⚠️ Sorry, something went wrong with CareerBuddy: {e}"
 
-    # Get bot response and append to history
-    bot_response = completion.choices[0].message.content
+    # Append bot response to history
     conversation_history.append({"role": "assistant", "content": bot_response})
-
     return bot_response
-
 
 # ---------------- Terminal test ----------------
 if __name__ == "__main__":
