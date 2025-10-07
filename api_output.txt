@@ -1,0 +1,1 @@
+{"status":"ERROR","request_id":"1700451b-28a4-4fed-a0f4-c7b77c6e9c49","error":{"message":"Location type should be one of: ANY, CITY, STATE, COUNTRY.","code":400}}

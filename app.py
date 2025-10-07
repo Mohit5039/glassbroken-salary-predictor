@@ -11,6 +11,7 @@ from xgboost.core import XGBoostError
 from llm import ask_career_bot
 
 
+
 # ----------------- Config --------------------
 st.set_page_config(
     page_title="Glassbroken: AI Career Buddy",
@@ -122,27 +123,28 @@ def predict_and_adjust(model, scaler, expected_columns, input_df, city):
 
 # ----------------- Pages --------------------
 def render_about_page():
-    st.title("📖 About GlassBroken: AI Career Buddy")
+    st.title("📖 About Mārga: AI-Powered Career Guide")
     st.divider()
     
     st.header("📌 Project Overview")
     st.write(
-        "**GlassBroken: AI Career Buddy** is an AI-powered platform designed to help users with both "
-        "**salary predictions** and **career guidance** through interactive chatbot interfaces."
+        "**Mārga** is an AI-powered platform designed to help users with **salary predictions**, **career guidance**, "
+        "and **personal upskilling** through interactive, modular interfaces."
     )
     
     st.header("🧠 How It Works")
     st.write(
-        "The app originally used a trained ML model (XGBoost Regressor) to predict monthly base salary, "
-        "convert it to annual CTC, and adjust for city cost-of-living multipliers. "
-        "Now, it also includes a conversational career guidance bot (CareerBuddy) powered by LLaMA "
-        "for multi-turn, personalized career advice."
+        "The app uses a trained ML model (XGBoost Regressor) to predict monthly base salary, converts it to annual CTC, "
+        "and adjusts for city cost-of-living multipliers. Additionally, it features **CareerBuddy 🤝**, a conversational "
+        "career guidance bot powered by **LLaMA**, fine-tuned for this project using prompt engineering to provide "
+        "multi-turn, personalized career advice."
     )
     
-    st.header("💬 Dual Bot Features")
+    st.header("💬 Modular Features")
     st.write(
         "- **PayCheck 💰**: Estimates annual salary, salary ranges, and city-adjusted comparisons with interactive plots.\n"
-        "- **CareerBuddy 🤝**: Engages in multi-turn conversations, asks clarifying questions, and provides structured career advice."
+        "- **CareerBuddy 🤝**: Engages in multi-turn conversations, asks clarifying questions, and provides structured career guidance using LLaMA.\n"
+        "- **UpskillGuide 🧠**: Curates learning paths and practice resources to help users upskill step by step."
     )
     
     st.header("📊 Data & Model")
@@ -159,46 +161,49 @@ def render_about_page():
     
     st.header("⚠️ Limitations")
     st.write(
-        "* CareerBuddy responses are in first version; tone and structure will improve over time.\n"
+        "* CareerBuddy is a first-version LLaMA-based bot; tone and structure will improve over time.\n"
         "* No company-specific salary data.\n"
         "* City adjustments are static.\n"
         "* Predictions may be less accurate for rare job titles.\n"
-        "* Gender input is not used in model (only for analytics)."
+        "* Gender input is used for analytics only, not salary prediction."
     )
     
     st.header("📈 Future Plans")
     st.write(
-        "- Polish CareerBuddy responses for friendly, concise guidance.\n"
-        "- Integrate live salary data via RapidAPI for comparison.\n"
+        "- Refine CareerBuddy for friendlier, more concise guidance.\n"
+        "- Integrate live salary data via RapidAPI.\n"
         "- Continue daily feature updates and improvements."
     )
     
     st.header("👥 Credits")
     st.write(
         "Designed and built by **Mohit Singh (Mohit Shekhawat)** as an internship project, "
-    "evolving into a modular AI career assistant platform."
+        "evolving into a modular AI career assistant platform."
     )
+
 
 
 def render_chatbot():
     st.title("PayCheck 💰: Know Your Numbers")
+    
+    # Display previous messages
     for msg in st.session_state.messages:
         with st.chat_message(msg['role']):
             st.markdown(msg['content'])
 
     current_step = len(st.session_state.inputs)
+
     if current_step < len(FORM_STEPS):
         key, prompt, *options = FORM_STEPS[current_step]
         with st.chat_message("assistant"):
             st.markdown(prompt)
 
         if options:
-            # Initialize the dropdown state if not exists
+            # Dropdown options handling
             dropdown_key = f"{key}_dropdown"
             if dropdown_key not in st.session_state:
                 st.session_state[dropdown_key] = None
-            
-            # Create selectbox with a placeholder option
+
             select_options = ["Please select..."] + options[0]
             user_response = st.selectbox(
                 " ", 
@@ -207,58 +212,53 @@ def render_chatbot():
                 label_visibility="collapsed",
                 index=0 if st.session_state[dropdown_key] is None else select_options.index(st.session_state[dropdown_key])
             )
-            
-            # Only proceed if user made a valid selection
+
             if user_response != "Please select...":
-                # Add a button to confirm the selection
                 if st.button("Confirm Selection", key=f"confirm_{key}"):
                     st.session_state.inputs[key] = user_response
                     st.session_state.messages.append({'role': 'assistant', 'content': prompt})
                     st.session_state.messages.append({'role': 'user', 'content': user_response})
-                    # Clean up the dropdown state
-                    if dropdown_key in st.session_state:
-                        del st.session_state[dropdown_key]
+                    del st.session_state[dropdown_key]
                     st.rerun()
                 else:
                     st.info(f"You selected: **{user_response}**. Click 'Confirm Selection' to proceed.")
+
         else:
-            # Special handling for experience field with real-time validation
+            # Experience field validation
             if key == 'experience':
                 user_input = st.chat_input(placeholder="Type your years of experience...")
                 if user_input:
-                    # Real-time validation for experience
                     try:
                         exp_value = float(user_input)
                         age_value = int(st.session_state.inputs.get('age', 0))
                         max_exp = age_value - 18
-                        
+
                         if exp_value < 0:
-                            st.error("🤔 **Whoa there, time traveler!** Negative experience? Unless you've been working in a parallel universe, let's keep it positive! 😄")
+                            st.error("🤔 **Whoa there!** Negative experience? Keep it positive! 😄")
                             return
                         elif exp_value > max_exp and age_value > 0:
-                            st.error(f"🚀 **Hold up, superhuman!** With {age_value} years of age, you could have max {max_exp} years of experience (assuming you started working at 18). Did you start working in the womb? 😅 Try a number ≤ {max_exp}")
+                            st.error(f"🚀 **Hold up!** Max experience with age {age_value} is {max_exp}. Try ≤ {max_exp}")
                             return
                         else:
-                            # Valid input, proceed
                             st.session_state.inputs[key] = user_input
                             st.session_state.messages.append({'role': 'assistant', 'content': prompt})
                             st.session_state.messages.append({'role': 'user', 'content': user_input})
                             st.rerun()
                     except ValueError:
-                        st.error("🧮 **Oops!** That doesn't look like a number. Please enter your experience in years (e.g., 5, 2.5, etc.)")
+                        st.error("🧮 **Oops!** Enter experience in years (e.g., 5, 2.5)")
                         return
+
             else:
                 user_input = st.chat_input(placeholder="Type your answer...")
                 if user_input:
-                    # Special validation for age
                     if key == 'age':
                         try:
                             age_value = int(user_input)
                             if age_value < 18:
-                                st.error("👶 **Too young for the workforce!** You need to be at least 18 years old. Come back when you're all grown up! 😊")
+                                st.error("👶 **Too young!** Must be at least 18 years old.")
                                 return
                         except ValueError:
-                            st.error("🎂 **Age should be a whole number!** Please enter your age in years (e.g., 25, 30, etc.)")
+                            st.error("🎂 **Age should be a whole number!**")
                             return
                     
                     st.session_state.inputs[key] = user_input
@@ -266,19 +266,25 @@ def render_chatbot():
                     st.session_state.messages.append({'role': 'user', 'content': user_input})
                     st.rerun()
     else:
-        # Preprocess inputs to check for edge case before showing progress
+        # All inputs completed
         processed = preprocess_inputs(st.session_state.inputs, all_job_titles)
         if processed[0] is None:
             st.error(processed[1])
             return
+
         with st.chat_message("assistant"):
-            st.markdown("Thanks! Let me calculate your estimated salary...")
+            st.markdown("Thanks! Let me calculate your estimated salary... 💰")
+        
+       
+        # Progress animation
         progress_bar = st.progress(0)
         for i in range(101):
             progress_bar.progress(i)
             time.sleep(0.01)
+
         st.session_state.completed = True
         st.rerun()
+
 
 def render_report(model, scaler, expected_columns, all_job_titles):
     data = st.session_state.inputs.copy()
@@ -289,8 +295,12 @@ def render_report(model, scaler, expected_columns, all_job_titles):
 
     model_input, matched_job, edu_level = processed
     base, city_salary, low, high, df_cities = predict_and_adjust(model, scaler, expected_columns, model_input, data['city'])
+    
+    
 
     st.title("📊 Salary Prediction Report")
+    
+    # Chat summary
     st.subheader("🧾 Chat Summary")
     col1, col2 = st.columns(2)
     with col1:
@@ -303,6 +313,7 @@ def render_report(model, scaler, expected_columns, all_job_titles):
         st.write(f"**Location:** {data['city']}")
 
     st.divider()
+    # Model output
     st.subheader("💰 Estimated Annual CTC (Model Output)")
     col1, col2 = st.columns(2)
     with col1:
@@ -319,6 +330,7 @@ def render_report(model, scaler, expected_columns, all_job_titles):
     )
 
     st.divider()
+    # City-wise comparison chart
     st.subheader("📈 City-wise Salary Comparison")
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -344,11 +356,16 @@ def render_report(model, scaler, expected_columns, all_job_titles):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    # Detailed city table
     st.subheader("🏙️ Detailed City Comparison")
     display_df = df_cities.copy()
     for col in ['Estimated Salary (Annual)', 'Lower Bound', 'Upper Bound']:
         display_df[col] = display_df[col].apply(lambda x: f"₹ {x:,.0f}")
     st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+
+
+
     
 
 #----------- Guidance Bot -----------#
@@ -390,8 +407,154 @@ def render_career_board():
     if st.button("Clear Career Chat"):
         st.session_state.career_messages = []
         st.rerun()
+        
+        
+def render_upskill_guide():
+    st.title("🧠 UpskillGuide: Learn & Grow")
+    st.caption("Curated learning paths and practice resources to upskill yourself — one step at a time.")
+    st.divider()
+
+    upskill_resources = {
+        "Programming": {
+            "🎥 Video Resources": {
+                "FreeCodeCamp – Full Programming Playlists": "https://www.youtube.com/c/Freecodecamp",
+                "Striver – DSA & Competitive Programming": "https://www.youtube.com/@takeUforward",
+                "Programming with Mosh – Clean Coding": "https://www.youtube.com/@programmingwithmosh",
+                "Tech with Tim – Python Projects": "https://www.youtube.com/@TechWithTim",
+                "CodeWithHarry – Beginner Friendly": "https://www.youtube.com/@CodeWithHarry"
+            },
+            "📚 Reading Sources": {
+                "GeeksforGeeks": "https://www.geeksforgeeks.org/",
+                "W3Schools": "https://www.w3schools.com/",
+                "TutorialsPoint": "https://www.tutorialspoint.com/",
+                "RealPython": "https://realpython.com/",
+                "CPlusPlus.com": "https://cplusplus.com/"
+            },
+            "💻 Practice Platforms": {
+                "LeetCode": "https://leetcode.com/",
+                "HackerRank": "https://www.hackerrank.com/",
+                "Codeforces": "https://codeforces.com/",
+                "CodeChef": "https://www.codechef.com/",
+                "Exercism": "https://exercism.org/"
+            }
+        },
+        "Aptitude & Case Study": {
+            "🎥 Video Resources": {
+                "IndiaBix Aptitude – YouTube": "https://www.youtube.com/@indiabix",
+                "Unacademy Aptitude Series": "https://www.youtube.com/@Unacademy",
+                "CareerRide Logical Reasoning": "https://www.youtube.com/@CareerRide",
+                "CampusX Placement Series": "https://www.youtube.com/@CampusX-official",
+                "SkillSlate – Case Studies": "https://www.youtube.com/@SkillSlate"
+            },
+            "📚 Reading Sources": {
+                "IndiaBix Aptitude & Reasoning": "https://www.indiabix.com/",
+                "PrepInsta Resources": "https://prepinsta.com/",
+                "GFG Puzzles": "https://www.geeksforgeeks.org/category/puzzles/",
+                "CaseInterview.com": "https://www.caseinterview.com/",
+                "MindTools Problem Solving": "https://www.mindtools.com/"
+            },
+            "💻 Practice Platforms": {
+                "M4Maths": "https://www.m4maths.com/",
+                "TestBook Practice": "https://testbook.com/practice",
+                "PrepInsta Quiz Zone": "https://prepinsta.com/quiz/",
+                "TalentBattle": "https://talentbattle.in/",
+                "BrainBashers": "https://www.brainbashers.com/"
+            }
+        },
+        "Data Analytics": {
+            "🎥 Video Resources": {
+                "Alex The Analyst": "https://www.youtube.com/@AlexTheAnalyst",
+                "Krish Naik – Data Science": "https://www.youtube.com/@krishnaik06",
+                "Ken Jee – Career & Projects": "https://www.youtube.com/@KenJee1",
+                "Luke Barousse – Data Projects": "https://www.youtube.com/@LukeBarousse",
+                "DataCamp Tutorials": "https://www.youtube.com/@DataCamp"
+            },
+            "📚 Reading Sources": {
+                "Kaggle Learn": "https://www.kaggle.com/learn",
+                "Analytics Vidhya": "https://www.analyticsvidhya.com/",
+                "Towards Data Science": "https://towardsdatascience.com/",
+                "Mode SQL Tutorial": "https://mode.com/sql-tutorial/",
+                "W3Schools Data Science": "https://www.w3schools.com/python/python_data_science.asp"
+            },
+            "💻 Practice Platforms": {
+                "Kaggle Competitions": "https://www.kaggle.com/competitions",
+                "DataCamp Practice": "https://www.datacamp.com/",
+                "StrataScratch": "https://www.stratascratch.com/",
+                "LeetCode SQL Problems": "https://leetcode.com/problemset/database/",
+                "Hackerrank SQL Track": "https://www.hackerrank.com/domains/sql"
+            }
+        },
+        "Development": {
+            "🎥 Video Resources": {
+                "Traversy Media": "https://www.youtube.com/@TraversyMedia",
+                "FreeCodeCamp – Full Stack": "https://www.youtube.com/c/Freecodecamp",
+                "Fireship – Modern Concepts": "https://www.youtube.com/@Fireship",
+                "Net Ninja": "https://www.youtube.com/@NetNinja",
+                "CodeWithHarry – Full Stack Hindi": "https://www.youtube.com/@CodeWithHarry"
+            },
+            "📚 Reading Sources": {
+                "MDN Web Docs": "https://developer.mozilla.org/",
+                "DevDocs.io": "https://devdocs.io/",
+                "W3Schools Web Dev": "https://www.w3schools.com/",
+                "FreeCodeCamp Articles": "https://www.freecodecamp.org/news/",
+                "CSS Tricks": "https://css-tricks.com/"
+            },
+            "💻 Practice Platforms": {
+                "Frontend Mentor": "https://www.frontendmentor.io/",
+                "CodePen": "https://codepen.io/",
+                "GitHub Projects": "https://github.com/trending",
+                "JSFiddle": "https://jsfiddle.net/",
+                "StackBlitz": "https://stackblitz.com/"
+            }
+        },
+        "Career Growth & Productivity": {
+            "🎥 Video Resources": {
+                "Ali Abdaal – Productivity": "https://www.youtube.com/@aliabdaal",
+                "Thomas Frank – Study & Focus": "https://www.youtube.com/@Thomasfrank",
+                "CareerVidz – Interview Prep": "https://www.youtube.com/@CareerVidz",
+                "TED Talks – Career Insights": "https://www.youtube.com/@TED",
+                "LinkedIn Learning": "https://www.linkedin.com/learning/"
+            },
+            "📚 Reading Sources": {
+                "Harvard Business Review": "https://hbr.org/",
+                "Indeed Career Guide": "https://www.indeed.com/career-advice",
+                "Medium Career Advice": "https://medium.com/tag/career-advice",
+                "MindTools Productivity": "https://www.mindtools.com/",
+                "Notion Blog": "https://www.notion.so/blog"
+            },
+            "💻 Tools & Practice": {
+                "LinkedIn Skill Assessments": "https://www.linkedin.com/skill-assessments/",
+                "Notion Templates": "https://www.notion.so/templates",
+                "Trello": "https://trello.com/",
+                "Resume.io": "https://resume.io/",
+                "Jobscan Resume Optimizer": "https://www.jobscan.co/"
+            }
+        }
+    }
+
+    tabs = st.tabs(list(upskill_resources.keys()))
+
+    for idx, (category, sections) in enumerate(upskill_resources.items()):
+        with tabs[idx]:
+            st.markdown(f"### 🚀 {category}")
+            st.write("---")
+
+            col1, col2, col3 = st.columns(3)
+            columns = [col1, col2, col3]
+
+            for i, (section_name, resources) in enumerate(sections.items()):
+                with columns[i % 3]:
+                    with st.container(border=True):
+                        st.subheader(section_name)
+                        for name, link in resources.items():
+                            st.markdown(f"- [{name}]({link})", unsafe_allow_html=True)
+
+    st.write("---")
+    st.info("💡 More curated paths coming soon. Share your suggestions in the feedback section!")
 
 
+
+# ----------------- Main --------------------
 # ----------------- Main --------------------
 def main():
     global all_job_titles
@@ -399,72 +562,91 @@ def main():
 
     # ---------------- Initialize Session State ----------------
     if 'messages' not in st.session_state:
-     st.session_state.messages = []
-     st.session_state.inputs = {}
-     st.session_state.completed = False
-     st.session_state.show_about = False
-     st.session_state.show_career = False
+        st.session_state.messages = []
+    if 'inputs' not in st.session_state:
+        st.session_state.inputs = {}
+    if 'completed' not in st.session_state:
+        st.session_state.completed = False
+    if 'show_about' not in st.session_state:
+        st.session_state.show_about = False
+    if 'show_career' not in st.session_state:
+        st.session_state.show_career = False
+    if 'show_upskill' not in st.session_state:
+        st.session_state.show_upskill = False
+    if 'career_messages' not in st.session_state:
+        st.session_state.career_messages = []
 
     # ---------------- Sidebar ----------------
     with st.sidebar:
-     st.markdown("# GlassBroken: AI Career Buddy")
-     st.divider()
-    
-        
-     if st.button("About"):
-        st.session_state.show_about = True
-        st.session_state.show_career = False
-        st.rerun()
+        st.markdown("# Mārga: AI-Powered Career Guide")
+        st.divider()
 
-     if st.button("PayCheck 💰"):
-        # go to the original salary/chat board
-        st.session_state.show_about = False
-        st.session_state.show_career = False
-        st.rerun()
+        if st.button("About", key="sidebar_about"):
+            st.session_state.show_about = True
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.rerun()
 
-     if st.button("CareerBuddy 🤝"):
-        st.session_state.show_career = True
-        st.session_state.show_about = False
-        st.rerun()
+        if st.button("PayCheck 💰", key="sidebar_paycheck"):
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.rerun()
 
-     st.divider()
+        if st.button("CareerBuddy 🤝", key="sidebar_career"):
+            st.session_state.show_about = False
+            st.session_state.show_career = True
+            st.session_state.show_upskill = False
+            st.rerun()
 
-      # Separate restart buttons
-     if st.button("Restart PayCheck"):
-        st.session_state.messages = []
-        st.session_state.inputs = {}
-        st.session_state.completed = False
-        st.session_state.show_about = False
-        st.session_state.show_career = False
-        st.rerun()
+        if st.button("UpskillGuide 🧠", key="sidebar_upskill"):
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = True
+            st.rerun()
 
-     if st.button("Restart CareerBuddy"):
-        st.session_state.career_messages = []
-        st.session_state.show_career = True
-        st.rerun()
+        st.divider()
 
-     st.divider()
+        # ---------------- Restart Buttons ----------------
+        if st.button("Restart PayCheck", key="restart_paycheck"):
+            st.session_state.messages = []
+            st.session_state.inputs = {}
+            st.session_state.completed = False
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.rerun()
 
-     if st.button("Restart All (Full Reset)"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.session_state.messages = []
-        st.session_state.inputs = {}
-        st.session_state.completed = False
-        st.session_state.show_about = False
-        st.session_state.show_career = False
-        st.rerun()
+        if st.button("Restart CareerBuddy", key="restart_career"):
+            st.session_state.career_messages = []
+            st.session_state.show_career = True
+            st.session_state.show_about = False
+            st.session_state.show_upskill = False
+            st.rerun()
 
+        if st.button("Restart All (Full Reset)", key="restart_all"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.session_state.messages = []
+            st.session_state.inputs = {}
+            st.session_state.completed = False
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.rerun()
 
     # ---------------- Page Rendering ----------------
     if st.session_state.show_about:
         render_about_page()
     elif st.session_state.show_career:
         render_career_board()
+    elif st.session_state.show_upskill:
+        render_upskill_guide()
     elif not st.session_state.completed:
         render_chatbot()
     else:
         render_report(model, scaler, expected_columns, all_job_titles)
+
 
 if __name__ == "__main__":
     main()
