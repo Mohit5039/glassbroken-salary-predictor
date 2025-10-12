@@ -557,7 +557,7 @@ def render_jobs():
     import requests
     import streamlit as st
 
-    st.title(" ###JobScout : Live Job Postings")
+    st.title(" JobScout : Live Job Postings")
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
@@ -730,6 +730,17 @@ def main():
             st.session_state.show_upskill = False
             st.session_state.show_jobs = False   # ✅ added
             st.rerun()
+        
+        if st.button("Restart JobScout", key="restart_jobscout"):
+            st.session_state.show_jobs = True
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.session_state.job_results = []  # optional: clear previous search results
+            st.session_state.job_query = ""    # optional: clear previous query
+            st.session_state.job_location = "" # optional: clear previous location
+            st.rerun()
+
 
         if st.button("Restart All (Full Reset)", key="restart_all"):
             for key in list(st.session_state.keys()):
