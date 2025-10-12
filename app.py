@@ -557,7 +557,7 @@ def render_jobs():
     import requests
     import streamlit as st
 
-    st.title(" ### JobScout : Live Job Postings")
+    st.title(" ###JobScout : Live Job Postings")
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
