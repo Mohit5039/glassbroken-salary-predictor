@@ -557,17 +557,22 @@ def render_jobs():
     import requests
     import streamlit as st
 
-    st.title("🔍 Live Job Postings")
+    st.title(" ### JobScout : Live Job Postings")
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
     query = st.text_input("Enter job title (e.g., Data Scientist, Web Developer):")
     location = st.text_input("Enter location (optional):", "India")
-    num_pages = st.slider("Number of pages to fetch", 1, 5, 2)
 
+    # Filters
     job_type_filter = st.multiselect(
         "Filter by Job Type",
         options=["Full-time", "Part-time", "Contract", "Internship"],
+        default=[]
+    )
+    remote_filter = st.multiselect(
+        "Filter by Work Type",
+        options=["Remote", "On-site", "Hybrid"],
         default=[]
     )
     company_filter = st.text_input("Filter by Company Name (optional):")
@@ -582,27 +587,38 @@ def render_jobs():
 
             all_jobs = []
             seen_ids = set()
+            page = 1
 
-            for page in range(num_pages):
-                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page + 1}
+            while True:
+                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page}
                 try:
                     response = requests.get(url, headers=headers, params=params)
                     response.raise_for_status()
                     data = response.json()
                     jobs = data.get("data", [])
 
+                    if not jobs:
+                        break  # no more jobs
+
                     for job in jobs:
                         job_id = job.get("job_id") or job.get("job_apply_link")
-                        if job_id not in seen_ids:
-                            # Apply filters
-                            if job_type_filter and job.get("job_employment_type") not in job_type_filter:
-                                continue
-                            if company_filter and company_filter.lower() not in job.get("employer_name", "").lower():
-                                continue
-                            all_jobs.append(job)
-                            seen_ids.add(job_id)
+                        if job_id in seen_ids:
+                            continue
+                        # Apply filters
+                        if job_type_filter and job.get("job_employment_type") not in job_type_filter:
+                            continue
+                        if remote_filter and job.get("job_working_mode") not in remote_filter:
+                            continue
+                        if company_filter and company_filter.lower() not in job.get("employer_name", "").lower():
+                            continue
+                        all_jobs.append(job)
+                        seen_ids.add(job_id)
+
+                    page += 1
+
                 except Exception as e:
-                    st.error(f"Error fetching page {page + 1}: {e}")
+                    st.error(f"Error fetching page {page}: {e}")
+                    break
 
             if not all_jobs:
                 st.warning("No jobs found for your search with applied filters.")
@@ -617,6 +633,7 @@ def render_jobs():
                     st.write(f"**Company:** {job['employer_name']}")
                     st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
                     st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
+                    st.write(f"**Work Mode:** {job.get('job_working_mode', 'N/A')}")
                     snippet = job.get("job_description", "")
                     if snippet:
                         st.info(snippet[:300] + ("..." if len(snippet) > 300 else ""))
@@ -626,6 +643,7 @@ def render_jobs():
                     if logo:
                         st.image(logo, width=80)
                 st.markdown("---")
+
 
 # ----------------- Main --------------------
 # ----------------- Main --------------------
@@ -685,7 +703,7 @@ def main():
             st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
-        if st.button("Live Jobs 💼", key="sidebar_jobs"):
+        if st.button("JobScout 💼", key="sidebar_jobs"):
             st.session_state.show_about = False
             st.session_state.show_career = False
             st.session_state.show_upskill = False
