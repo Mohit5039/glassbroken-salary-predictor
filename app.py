@@ -172,7 +172,7 @@ def render_about_page():
     st.write(
         "- Refine CareerBuddy for friendlier, more concise guidance.\n"
         "- Continue daily feature updates and improvements."
-        " - Will soon add a feedback feature "
+        " - Will soon add a feedback feature"
     )
     
     st.header("👥 Credits")
@@ -553,6 +553,42 @@ def render_upskill_guide():
     st.info("💡 More curated paths coming soon. Share your suggestions in the feedback section!")
 
 
+def render_jobs():
+    import requests
+    st.title("🔍 Live Job Postings")
+
+    API_KEY = st.secrets["RAPIDAPI_KEY"]
+
+    query = st.text_input("Enter job title (e.g., Data Scientist, Web Developer):")
+    location = st.text_input("Enter location (optional):", "India")
+
+    if st.button("Search Jobs") and query:
+        with st.spinner("Fetching live job listings..."):
+            url = "https://jsearch.p.rapidapi.com/search"
+            headers = {
+                "X-RapidAPI-Key": API_KEY,
+                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+            }
+            params = {"query": f"{query} in {location}", "num_pages": 1}
+
+            response = requests.get(url, headers=headers, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                jobs = data.get("data", [])
+
+                if not jobs:
+                    st.warning("No jobs found for your search.")
+                else:
+                    for i, job in enumerate(jobs[:5], 1):
+                        st.subheader(f"{i}. {job['job_title']}")
+                        st.write(f"**Company:** {job['employer_name']}")
+                        st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
+                        st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
+                        st.write(f"[Apply Here 🔗]({job['job_apply_link']})")
+                        st.markdown("---")
+            else:
+                st.error(f"Error {response.status_code}: {response.text}")
 
 # ----------------- Main --------------------
 # ----------------- Main --------------------
@@ -573,6 +609,8 @@ def main():
         st.session_state.show_career = False
     if 'show_upskill' not in st.session_state:
         st.session_state.show_upskill = False
+    if 'show_jobs' not in st.session_state:     # ✅ Added missing state
+        st.session_state.show_jobs = False
     if 'career_messages' not in st.session_state:
         st.session_state.career_messages = []
 
@@ -585,24 +623,36 @@ def main():
             st.session_state.show_about = True
             st.session_state.show_career = False
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
         if st.button("PayCheck 💰", key="sidebar_paycheck"):
             st.session_state.show_about = False
             st.session_state.show_career = False
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
+            st.session_state.completed = False
             st.rerun()
 
         if st.button("CareerBuddy 🤝", key="sidebar_career"):
             st.session_state.show_about = False
             st.session_state.show_career = True
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
         if st.button("UpskillGuide 🧠", key="sidebar_upskill"):
             st.session_state.show_about = False
             st.session_state.show_career = False
             st.session_state.show_upskill = True
+            st.session_state.show_jobs = False   # ✅ added
+            st.rerun()
+
+        if st.button("Live Jobs 💼", key="sidebar_jobs"):
+            st.session_state.show_about = False
+            st.session_state.show_career = False
+            st.session_state.show_upskill = False
+            st.session_state.show_jobs = True
             st.rerun()
 
         st.divider()
@@ -615,6 +665,7 @@ def main():
             st.session_state.show_about = False
             st.session_state.show_career = False
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
         if st.button("Restart CareerBuddy", key="restart_career"):
@@ -622,6 +673,7 @@ def main():
             st.session_state.show_career = True
             st.session_state.show_about = False
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
         if st.button("Restart All (Full Reset)", key="restart_all"):
@@ -633,6 +685,7 @@ def main():
             st.session_state.show_about = False
             st.session_state.show_career = False
             st.session_state.show_upskill = False
+            st.session_state.show_jobs = False   # ✅ added
             st.rerun()
 
     # ---------------- Page Rendering ----------------
@@ -642,6 +695,8 @@ def main():
         render_career_board()
     elif st.session_state.show_upskill:
         render_upskill_guide()
+    elif st.session_state.show_jobs:
+        render_jobs()
     elif not st.session_state.completed:
         render_chatbot()
     else:
