@@ -555,12 +555,22 @@ def render_upskill_guide():
 
 def render_jobs():
     import requests
+    import streamlit as st
+
     st.title("🔍 Live Job Postings")
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
     query = st.text_input("Enter job title (e.g., Data Scientist, Web Developer):")
     location = st.text_input("Enter location (optional):", "India")
+    num_pages = st.slider("Number of pages to fetch", 1, 5, 2)
+
+    job_type_filter = st.multiselect(
+        "Filter by Job Type",
+        options=["Full-time", "Part-time", "Contract", "Internship"],
+        default=[]
+    )
+    company_filter = st.text_input("Filter by Company Name (optional):")
 
     if st.button("Search Jobs") and query:
         with st.spinner("Fetching live job listings..."):
@@ -569,26 +579,53 @@ def render_jobs():
                 "X-RapidAPI-Key": API_KEY,
                 "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
             }
-            params = {"query": f"{query} in {location}", "num_pages": 1}
 
-            response = requests.get(url, headers=headers, params=params)
+            all_jobs = []
+            seen_ids = set()
 
-            if response.status_code == 200:
-                data = response.json()
-                jobs = data.get("data", [])
+            for page in range(num_pages):
+                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page + 1}
+                try:
+                    response = requests.get(url, headers=headers, params=params)
+                    response.raise_for_status()
+                    data = response.json()
+                    jobs = data.get("data", [])
 
-                if not jobs:
-                    st.warning("No jobs found for your search.")
-                else:
-                    for i, job in enumerate(jobs[:5], 1):
-                        st.subheader(f"{i}. {job['job_title']}")
-                        st.write(f"**Company:** {job['employer_name']}")
-                        st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
-                        st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
-                        st.write(f"[Apply Here 🔗]({job['job_apply_link']})")
-                        st.markdown("---")
-            else:
-                st.error(f"Error {response.status_code}: {response.text}")
+                    for job in jobs:
+                        job_id = job.get("job_id") or job.get("job_apply_link")
+                        if job_id not in seen_ids:
+                            # Apply filters
+                            if job_type_filter and job.get("job_employment_type") not in job_type_filter:
+                                continue
+                            if company_filter and company_filter.lower() not in job.get("employer_name", "").lower():
+                                continue
+                            all_jobs.append(job)
+                            seen_ids.add(job_id)
+                except Exception as e:
+                    st.error(f"Error fetching page {page + 1}: {e}")
+
+            if not all_jobs:
+                st.warning("No jobs found for your search with applied filters.")
+                return
+
+            st.success(f"Found {len(all_jobs)} unique job postings!")
+
+            for i, job in enumerate(all_jobs, 1):
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.subheader(f"{i}. {job['job_title']}")
+                    st.write(f"**Company:** {job['employer_name']}")
+                    st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
+                    st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
+                    snippet = job.get("job_description", "")
+                    if snippet:
+                        st.info(snippet[:300] + ("..." if len(snippet) > 300 else ""))
+                    st.markdown(f"[Apply Here 🔗]({job['job_apply_link']})")
+                with col2:
+                    logo = job.get("employer_logo")
+                    if logo:
+                        st.image(logo, width=80)
+                st.markdown("---")
 
 # ----------------- Main --------------------
 # ----------------- Main --------------------
