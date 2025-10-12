@@ -124,62 +124,68 @@ def predict_and_adjust(model, scaler, expected_columns, input_df, city):
 # ----------------- Pages --------------------
 def render_about_page():
     st.title("📖 About Mārga: AI-Powered Career Guide")
-    st.divider()
-    
-    st.header("📌 Project Overview")
-    st.write(
-        "**Mārga** is an AI-powered platform designed to help users with **salary predictions**, **career guidance**, "
-        "and **personal upskilling** through interactive, modular interfaces."
-    )
-    
-    st.header("🧠 How It Works")
-    st.write(
-        "The app uses a trained ML model (XGBoost Regressor) to predict monthly base salary, converts it to annual CTC, "
-        "and adjusts for city cost-of-living multipliers. Additionally, it features **CareerBuddy 🤝**, a conversational "
-        "career guidance bot powered by **LLaMA**, fine-tuned for this project using prompt engineering to provide "
-        "multi-turn, personalized career advice."
-    )
-    
-    st.header("💬 Modular Features")
-    st.write(
-        "- **PayCheck 💰**: Estimates annual salary, salary ranges, and city-adjusted comparisons with interactive plots.\n"
-        "- **CareerBuddy 🤝**: Engages in multi-turn conversations, asks clarifying questions, and provides structured career guidance using LLaMA.\n"
-        "- **UpskillGuide 🧠**: Curates learning paths and practice resources to help users upskill step by step."
-    )
-    
-    st.header("📊 Data & Model")
-    st.write(
-        "Salary prediction uses XGBoost Regressor trained on public Indian salary data. "
-        "Preprocessing includes one-hot encoding, scaling, and fuzzy job title matching."
-    )
-    
-    st.header("🏙️ City Adjustments")
-    st.write(
-        "Salaries are adjusted using static multipliers for major Indian cities. "
-        "These are approximations and not learned directly by the model."
-    )
-    
-    st.header("⚠️ Limitations")
-    st.write(
-        "* CareerBuddy is a first-version LLaMA-based bot; tone and structure will improve over time.\n"
-        "* No company-specific salary data.\n"
-        "* City adjustments are static.\n"
-        "* Predictions may be less accurate for rare job titles.\n"
-        "* Gender input is used for analytics only, not salary prediction."
-    )
-    
-    st.header("📈 Future Plans")
-    st.write(
-        "- Refine CareerBuddy for friendlier, more concise guidance.\n"
-        "- Continue daily feature updates and improvements."
-        " - Will soon add a feedback feature"
-    )
-    
-    st.header("👥 Credits")
-    st.write(
-        "Designed and built by **Mohit Singh (Mohit Shekhawat)** as an internship project, "
-        "evolving into a modular AI career assistant platform."
-    )
+st.divider()
+
+st.header("📌 Project Overview")
+st.write(
+    "**Mārga** is an AI-powered platform designed to help users with **salary predictions**, **career guidance**, "
+    "**personal upskilling**, and **live job search** through interactive, modular interfaces."
+)
+
+st.header("🧠 How It Works")
+st.write(
+    "The app uses a trained ML model (XGBoost Regressor) to predict monthly base salary, converts it to annual CTC, "
+    "and adjusts for city cost-of-living multipliers. Additionally, it features **CareerBuddy 🤝**, a conversational "
+    "career guidance bot powered by **LLaMA**, fine-tuned for this project using prompt engineering to provide "
+    "multi-turn, personalized career advice. \n"
+    "The new **JobScout 💼** feature fetches live job postings using RapidAPI, allowing users to search by title, "
+    "location, type, and remote options."
+)
+
+st.header("💬 Modular Features")
+st.write(
+    "- **PayCheck 💰**: Estimates annual salary, salary ranges, and city-adjusted comparisons with interactive plots.\n"
+    "- **CareerBuddy 🤝**: Engages in multi-turn conversations, asks clarifying questions, and provides structured career guidance using LLaMA.\n"
+    "- **UpskillGuide 🧠**: Curates learning paths and practice resources to help users upskill step by step.\n"
+    "- **JobScout 💼**: Provides live job listings from multiple platforms with filters for location, employment type, and remote work."
+)
+
+st.header("📊 Data & Model")
+st.write(
+    "Salary prediction uses XGBoost Regressor trained on public Indian salary data. "
+    "Preprocessing includes one-hot encoding, scaling, and fuzzy job title matching."
+)
+
+st.header("🏙️ City Adjustments")
+st.write(
+    "Salaries are adjusted using static multipliers for major Indian cities. "
+    "These are approximations and not learned directly by the model."
+)
+
+st.header("⚠️ Limitations")
+st.write(
+    "* CareerBuddy is a first-version LLaMA-based bot; tone and structure will improve over time.\n"
+    "* No company-specific salary data.\n"
+    "* City adjustments are static.\n"
+    "* Predictions may be less accurate for rare job titles.\n"
+    "* Gender input is used for analytics only, not salary prediction.\n"
+    "* JobScout depends on live API data; results may vary with API availability and limits."
+)
+
+st.header("📈 Future Plans")
+st.write(
+    "- Refine CareerBuddy for friendlier, more concise guidance.\n"
+    "- Continue daily feature updates and improvements.\n"
+    "- Add feedback feature for CareerBuddy and JobScout.\n"
+    "- Enhance live job search with additional APIs and filters for better relevance."
+)
+
+st.header("👥 Credits")
+st.write(
+    "Designed and built by **Mohit Singh (Mohit Shekhawat)** as an internship project, "
+    "evolving into a modular AI career assistant platform with AI, ML, and real-time data integration."
+)
+
 
 
 
