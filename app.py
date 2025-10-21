@@ -585,10 +585,10 @@ def render_jobs():
 
     if st.button("Search Jobs") and query:
         with st.spinner("Fetching live job listings..."):
-            url = "https://jsearch.p.rapidapi.com/search"
+            url = "https://job-salary-data.p.rapidapi.com/company-job-salary"
             headers = {
                 "X-RapidAPI-Key": API_KEY,
-                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+                "X-RapidAPI-Host": "job-salary-data.p.rapidapi.com"
             }
 
             all_jobs = []
