@@ -603,7 +603,12 @@ def render_jobs():
             page = 1
 
             while True:
-                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page}
+                params = {
+    "job_title": query,
+    "location": location,
+    "radius": "100",  # optional, in miles
+    "page": str(page)
+}
                 try:
                     response = requests.get(url, headers=headers, params=params)
                     response.raise_for_status()
