@@ -596,7 +596,11 @@ def render_jobs():
             page = 1
 
             while True:
-                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page}
+                params = {
+    "query": f"{query} in {location}",
+    "num_pages": 2,    # fetch up to 20 results
+    "page": page
+}
                 try:
                     response = requests.get(url, headers=headers, params=params)
                     response.raise_for_status()
