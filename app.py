@@ -590,6 +590,13 @@ def render_jobs():
                 "X-RapidAPI-Key": API_KEY,
                 "X-RapidAPI-Host": "job-salary-data.p.rapidapi.com"
             }
+            params = {
+              "job_title": query,
+              "location": location,
+              "radius": "100",  # optional
+               "page": "1"       # optional
+            }
+            response = requests.get(url, headers=headers, params=params)
 
             all_jobs = []
             seen_ids = set()
