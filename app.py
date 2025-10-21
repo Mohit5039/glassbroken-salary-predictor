@@ -585,30 +585,18 @@ def render_jobs():
 
     if st.button("Search Jobs") and query:
         with st.spinner("Fetching live job listings..."):
-            url = "https://job-salary-data.p.rapidapi.com/company-job-salary"
+            url = "https://jsearch.p.rapidapi.com/search"
             headers = {
                 "X-RapidAPI-Key": API_KEY,
-                "X-RapidAPI-Host": "job-salary-data.p.rapidapi.com"
+                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
             }
-            params = {
-              "job_title": query,
-              "location": location,
-              "radius": "100",  # optional
-               "page": "1"       # optional
-            }
-            response = requests.get(url, headers=headers, params=params)
 
             all_jobs = []
             seen_ids = set()
             page = 1
 
             while True:
-                params = {
-    "job_title": query,
-    "location": location,
-    "radius": "100",  # optional, in miles
-    "page": str(page)
-}
+                params = {"query": f"{query} in {location}", "num_pages": 1, "page": page}
                 try:
                     response = requests.get(url, headers=headers, params=params)
                     response.raise_for_status()
