@@ -692,18 +692,7 @@ def render_jobs():
             if logo:
                 st.image(logo, width=80)
         st.markdown("---")
-try:
-    response = requests.get(url, headers=headers, params=params, timeout=10)
-    response.raise_for_status()  # raises HTTPError for bad responses
-    data = response.json()
-    jobs = data.get("data", [])
 
-    # process jobs...
-    
-except requests.exceptions.Timeout:
-    st.error("⚠️ Request timed out. Please try again later.")
-except requests.exceptions.RequestException as e:
-    st.error(f"Error fetching jobs: {e}\n💡 Tip: If the API stops responding, your key may be rate-limited.")
         
 
 
