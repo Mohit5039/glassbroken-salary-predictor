@@ -572,7 +572,7 @@ def render_jobs():
 
     st.title("🧭 JobScout: Live Job Postings")
     st.write(
-        "💡 Default snapshot shows latest 10 jobs for fast demo.\n"
+    
         "🔑 Live search may hit API rate limits—replace your RapidAPI key if needed."
     )
     st.divider()
