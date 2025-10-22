@@ -562,8 +562,9 @@ def render_upskill_guide():
 def render_jobs():
     import requests
     import streamlit as st
+    import time
 
-    st.title(" JobScout : Live Job Postings")
+    st.title("🧭 JobScout: Live Job Postings")
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
@@ -591,68 +592,64 @@ def render_jobs():
                 "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
             }
 
-            all_jobs = []
-            seen_ids = set()
-            page = 1
+            params = {
+                "query": f"{query} in {location}",
+                "page": 1,          # just one request per click
+                "num_pages": 1      # keep within free-tier limits
+            }
 
-            while True:
-                params = {
-    "query": f"{query} in {location}",
-    "num_pages": 2,    # fetch up to 20 results
-    "page": page
-}
-                try:
-                    response = requests.get(url, headers=headers, params=params)
-                    response.raise_for_status()
-                    data = response.json()
-                    jobs = data.get("data", [])
+            try:
+                response = requests.get(url, headers=headers, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                jobs = data.get("data", [])
 
-                    if not jobs:
-                        break  # no more jobs
+                if not jobs:
+                    st.warning("No jobs found for your search.")
+                    return
 
-                    for job in jobs:
-                        job_id = job.get("job_id") or job.get("job_apply_link")
-                        if job_id in seen_ids:
-                            continue
-                        # Apply filters
-                        if job_type_filter and job.get("job_employment_type") not in job_type_filter:
-                            continue
-                        if remote_filter and job.get("job_working_mode") not in remote_filter:
-                            continue
-                        if company_filter and company_filter.lower() not in job.get("employer_name", "").lower():
-                            continue
-                        all_jobs.append(job)
-                        seen_ids.add(job_id)
+                # Apply filters
+                filtered_jobs = []
+                seen_ids = set()
+                for job in jobs:
+                    job_id = job.get("job_id") or job.get("job_apply_link")
+                    if job_id in seen_ids:
+                        continue
+                    if job_type_filter and job.get("job_employment_type") not in job_type_filter:
+                        continue
+                    if remote_filter and job.get("job_working_mode") not in remote_filter:
+                        continue
+                    if company_filter and company_filter.lower() not in job.get("employer_name", "").lower():
+                        continue
+                    filtered_jobs.append(job)
+                    seen_ids.add(job_id)
 
-                    page += 1
+                st.success(f"Found {len(filtered_jobs)} job postings!")
 
-                except Exception as e:
-                    st.error(f"Error fetching page {page}: {e}")
-                    break
+                # Display results
+                for i, job in enumerate(filtered_jobs, 1):
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.subheader(f"{i}. {job.get('job_title', 'N/A')}")
+                        st.write(f"**Company:** {job.get('employer_name', 'N/A')}")
+                        st.write(f"**Location:** {job.get('job_city', 'N/A')}, {job.get('job_country', 'N/A')}")
+                        st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
+                        st.write(f"**Work Mode:** {job.get('job_working_mode', 'N/A')}")
+                        snippet = job.get("job_description", "")
+                        if snippet:
+                            st.info(snippet[:300] + ("..." if len(snippet) > 300 else ""))
+                        st.markdown(f"[Apply Here 🔗]({job.get('job_apply_link', '#')})")
+                    with col2:
+                        logo = job.get("employer_logo")
+                        if logo:
+                            st.image(logo, width=80)
+                    st.markdown("---")
 
-            if not all_jobs:
-                st.warning("No jobs found for your search with applied filters.")
-                return
+            except requests.exceptions.Timeout:
+                st.error("⚠️ Request timed out. Please try again in a few seconds.")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Error fetching jobs: {e}")
 
-            st.success(f"Found {len(all_jobs)} unique job postings!")
-
-            for i, job in enumerate(all_jobs, 1):
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.subheader(f"{i}. {job['job_title']}")
-                    st.write(f"**Company:** {job['employer_name']}")
-                    st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
-                    st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
-                    st.write(f"**Work Mode:** {job.get('job_working_mode', 'N/A')}")
-                    snippet = job.get("job_description", "")
-                    if snippet:
-                        st.info(snippet[:300] + ("..." if len(snippet) > 300 else ""))
-                    st.markdown(f"[Apply Here 🔗]({job['job_apply_link']})")
-                with col2:
-                    logo = job.get("employer_logo")
-                    if logo:
-                        st.image(logo, width=80)
-                st.markdown("---")
 
 
 # ----------------- Main --------------------
