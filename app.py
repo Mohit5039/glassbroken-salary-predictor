@@ -571,17 +571,13 @@ def render_jobs():
     import time
 
     st.title("🧭 JobScout: Live Job Postings")
-    st.write(
-        "🔑 Live search may hit API rate limits—replace your RapidAPI key if needed."
-    )
-    st.divider()
 
     API_KEY = st.secrets["RAPIDAPI_KEY"]
 
-    # ---------------- Inputs ----------------
     query = st.text_input("Enter job title (e.g., Data Scientist, Web Developer):")
     location = st.text_input("Enter location (optional):", "India")
 
+    # Filters
     job_type_filter = st.multiselect(
         "Filter by Job Type",
         options=["Full-time", "Part-time", "Contract", "Internship"],
@@ -594,55 +590,70 @@ def render_jobs():
     )
     company_filter = st.text_input("Filter by Company Name (optional):")
 
-    url = "https://jsearch.p.rapidapi.com/search"
-    headers = {
-        "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
-    }
+    # ------------------ Demo Fallback ------------------
+    SAMPLE_JOBS = [
+        {
+            "job_title": "Frontend Developer",
+            "employer_name": "DemoCorp",
+            "job_city": "Delhi",
+            "job_country": "India",
+            "job_employment_type": "Full-time",
+            "job_working_mode": "Remote",
+            "job_description": "Build and maintain UI components.",
+            "job_apply_link": "#",
+            "employer_logo": "https://via.placeholder.com/80"
+        },
+        {
+            "job_title": "Data Analyst",
+            "employer_name": "DataWorks",
+            "job_city": "Mumbai",
+            "job_country": "India",
+            "job_employment_type": "Full-time",
+            "job_working_mode": "On-site",
+            "job_description": "Analyze datasets and create dashboards.",
+            "job_apply_link": "#",
+            "employer_logo": "https://via.placeholder.com/80"
+        },
+        {
+            "job_title": "Backend Engineer",
+            "employer_name": "TechSolutions",
+            "job_city": "Bangalore",
+            "job_country": "India",
+            "job_employment_type": "Contract",
+            "job_working_mode": "Hybrid",
+            "job_description": "Develop and optimize server-side APIs.",
+            "job_apply_link": "#",
+            "employer_logo": "https://via.placeholder.com/80"
+        }
+    ]
 
-    # ---------------- Cached default jobs ----------------
-    @st.cache_data(ttl=3600)
-    def fetch_default_jobs():
-        try:
-            params = {"query": "latest jobs", "page": 1, "num_pages": 1}
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            return data.get("data", [])[:10]  # top 10
-        except:
-            return []
-
-    default_jobs = fetch_default_jobs()
-
-    # ---------------- Show default jobs if no search ----------------
-    if not query and default_jobs:
-        st.info("Showing default latest job postings for demo purposes:")
-        for i, job in enumerate(default_jobs, 1):
+    # Show demo jobs initially
+    if not query:
+        st.info("Showing demo job postings. Type a job title above and click 'Search Jobs' to fetch live results.")
+        for i, job in enumerate(SAMPLE_JOBS, 1):
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.subheader(f"{i}. {job.get('job_title', 'N/A')}")
-                st.write(f"**Company:** {job.get('employer_name', 'N/A')}")
-                st.write(f"**Location:** {job.get('job_city', 'N/A')}, {job.get('job_country', 'N/A')}")
+                st.subheader(f"{i}. {job['job_title']}")
+                st.write(f"**Company:** {job['employer_name']}")
+                st.write(f"**Location:** {job['job_city']}, {job['job_country']}")
                 st.write(f"**Type:** {job.get('job_employment_type', 'N/A')}")
                 st.write(f"**Work Mode:** {job.get('job_working_mode', 'N/A')}")
-                snippet = job.get("job_description", "")
-                if snippet:
-                    st.info(snippet[:300] + ("..." if len(snippet) > 300 else ""))
-                st.markdown(f"[Apply Here 🔗]({job.get('job_apply_link', '#')})")
+                st.info(job['job_description'])
+                st.markdown(f"[Apply Here 🔗]({job['job_apply_link']})")
             with col2:
-                logo = job.get("employer_logo")
-                if logo:
-                    st.image(logo, width=80)
+                st.image(job['employer_logo'], width=80)
             st.markdown("---")
 
-    # ---------------- User-triggered search ----------------
+    # ------------------ Live Search ------------------
     if st.button("Search Jobs") and query:
         with st.spinner("Fetching live job listings..."):
-            params = {
-                "query": f"{query} in {location}",
-                "page": 1,
-                "num_pages": 1
+            url = "https://jsearch.p.rapidapi.com/search"
+            headers = {
+                "X-RapidAPI-Key": API_KEY,
+                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
             }
+            params = {"query": f"{query} in {location}", "page": 1, "num_pages": 1}  # single page to reduce rate-limit
+
             try:
                 response = requests.get(url, headers=headers, params=params, timeout=10)
                 response.raise_for_status()
@@ -650,8 +661,8 @@ def render_jobs():
                 jobs = data.get("data", [])
 
                 if not jobs:
-                    st.warning("No jobs found for your search.")
-                    return
+                    st.warning("No jobs found for your search. Showing demo jobs below.")
+                    jobs = SAMPLE_JOBS  # fallback if nothing returned
 
                 # Apply filters
                 filtered_jobs = []
@@ -665,12 +676,12 @@ def render_jobs():
                     filtered_jobs.append(job)
 
                 if not filtered_jobs:
-                    st.warning("No jobs match your filters.")
-                    return
+                    st.warning("No jobs matched your filters. Showing demo jobs.")
+                    filtered_jobs = SAMPLE_JOBS
 
                 st.success(f"Found {len(filtered_jobs)} job postings!")
 
-                # Display search results
+                # Display results
                 for i, job in enumerate(filtered_jobs, 1):
                     time.sleep(0.1)  # smooth reveal
                     col1, col2 = st.columns([3, 1])
@@ -691,15 +702,9 @@ def render_jobs():
                     st.markdown("---")
 
             except requests.exceptions.Timeout:
-                st.error("⚠️ Request timed out. Please try again in a few seconds.")
+                st.error("⚠️ Request timed out. Please try again later.")
             except requests.exceptions.RequestException as e:
-                st.error(
-                    f"Error fetching jobs: {e}\n"
-                    "💡 Tip: If the API stops responding, your key may be rate-limited. "
-                    "Try replacing with a new RapidAPI key."
-                )
-
-
+                st.error(f"Error fetching jobs: {e}\n💡 Tip: If the API stops responding, your key may be rate-limited.")
 
 
 
